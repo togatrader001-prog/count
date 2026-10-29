@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   check:
@@ -33,3 +34,20 @@ jobs:
 
       - name: Build the Docker image
         run: docker build -t count-app .
+
+      - name: Sign in to AWS
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::864902168755:role/github-actions-count-ecr
+          aws-region: us-east-2
+
+      - name: Sign in to ECR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Tag and push the image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: |
+          docker tag count-app:latest 864902168755.dkr.ecr.us-east-2.amazonaws.com/count:${{ github.sha }}
+          docker push 864902168755.dkr.ecr.us-east-2.amazonaws.com/count:${{ github.sha }}
