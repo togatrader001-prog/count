@@ -3,3 +3,9 @@ dist
 .git
 .env
 .env.*
+terraform
+.npm-cache
+*.tfstate
+*.tfstate.*
+*.tfplan
+terraform.tfvars

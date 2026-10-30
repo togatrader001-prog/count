@@ -32,3 +32,7 @@ it('starts a fresh app at zero and rejects an unregistered route', async () => {
     .expect({ count: 1 });
   await request(app.getHttpServer()).get('/').expect(404);
 });
+it('reports health without incrementing the counter', async () => {
+  await request(app.getHttpServer()).get('/health').expect(200).expect({ status: 'ok' });
+  await request(app.getHttpServer()).get('/count').expect(200).expect({ count: 1 });
+});
