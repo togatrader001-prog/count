@@ -14,7 +14,7 @@ The `https_allowed_cidrs` variable defaults to empty, so the current `allowed_ci
 | Public direct | DNS only | `0.0.0.0/0` on 443 | App rate limiting or authentication must be added before opening |
 | Public through Cloudflare (recommended for public access) | Proxied | Cloudflare's current origin IPv4 ranges on 443 | Full (strict) TLS, Free Managed Ruleset, and one Free-plan rate limiting rule; maintain the CIDR list |
 
-Proposed public rate limit: 60 `GET /count` requests per minute per source IP, with a 429 response, subject to checking the Cloudflare dashboard's available settings. Confirm that Cloudflare caching does not serve repeated `/count` responses; the app sends `Cache-Control: no-store`. A Cloudflare Origin CA certificate alone would break DNS-only direct access, so this rollout uses a publicly trusted ACM exportable certificate.
+The Free dashboard permits a 10-second counting period. The deployed rule blocks `GET /count` for 10 seconds when a source IP exceeds 10 requests in 10 seconds; it applies only to `count.trendpointlabs.com`. Confirm that Cloudflare caching does not serve repeated `/count` responses; the app sends `Cache-Control: no-store`. A Cloudflare Origin CA certificate alone would break DNS-only direct access, so this rollout uses a publicly trusted ACM exportable certificate.
 
 ## Preparation
 
