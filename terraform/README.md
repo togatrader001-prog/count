@@ -40,7 +40,11 @@ The Free dashboard permits a 10-second counting period. The deployed rule blocks
 
 The DNS function reconciles every minute and on ECS task-state events. It publishes only a running, healthy task, preferring the newest healthy task during deployment. With no healthy task it leaves DNS unchanged and raises a Lambda error. DNS propagation and a single task cannot promise zero downtime. The in-memory counter resets on replacement.
 
-ACM renews an exportable certificate only after it has been exported at least once. The renewal event handler exports the new material, updates the TLS secret, and forces a new ECS deployment; duplicate renewal events with the same certificate do not redeploy. A daily check raises an alarm if the issued certificate has less than 30 days left. Check both CloudWatch error alarms because they have no notification action configured yet.
+## Alarm notifications
+
+The DNS and certificate Lambda error alarms send ALARM transitions to the `count-alarms` SNS topic. Set `alarm_notification_email` privately through an ignored `terraform.tfvars` file or a `TF_VAR_alarm_notification_email` environment variable before planning. Never commit the recipient address. After applying the reviewed plan, confirm the SNS subscription from that mailbox and send a test message to verify delivery. Until the subscription is confirmed, alarm notifications will not reach the mailbox.
+
+ACM renews an exportable certificate only after it has been exported at least once. The renewal event handler exports the new material, updates the TLS secret, and forces a new ECS deployment; duplicate renewal events with the same certificate do not redeploy. A daily check raises an alarm if the issued certificate has less than 30 days left. Verify alarm delivery after the notification subscription is confirmed.
 
 ## Cost estimate
 

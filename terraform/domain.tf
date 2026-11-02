@@ -221,6 +221,7 @@ resource "aws_cloudwatch_metric_alarm" "dns_errors" {
   threshold           = 0
   comparison_operator = "GreaterThanThreshold"
   treat_missing_data  = "notBreaching"
+  alarm_actions       = [aws_sns_topic.count_alarms.arn]
 }
 
 resource "aws_cloudwatch_metric_alarm" "certificate_errors" {
@@ -234,4 +235,76 @@ resource "aws_cloudwatch_metric_alarm" "certificate_errors" {
   threshold           = 0
   comparison_operator = "GreaterThanThreshold"
   treat_missing_data  = "notBreaching"
+  alarm_actions       = [aws_sns_topic.count_alarms.arn]
+}
+
+resource "aws_sns_topic" "count_alarms" {
+  name = "count-alarms"
+}
+
+data "aws_caller_identity" "current" {}
+
+data "aws_iam_policy_document" "count_alarm_topic" {
+  statement {
+    sid = "AllowAccountToManageTopic"
+    actions = [
+      "SNS:AddPermission",
+      "SNS:DeleteTopic",
+      "SNS:GetTopicAttributes",
+      "SNS:ListSubscriptionsByTopic",
+      "SNS:Publish",
+      "SNS:RemovePermission",
+      "SNS:SetTopicAttributes",
+      "SNS:Subscribe",
+    ]
+    resources = [aws_sns_topic.count_alarms.arn]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+  }
+
+  statement {
+    sid       = "AllowCountAlarmsToPublish"
+    actions   = ["SNS:Publish"]
+    resources = [aws_sns_topic.count_alarms.arn]
+
+    principals {
+      type        = "Service"
+      identifiers = ["cloudwatch.amazonaws.com"]
+    }
+
+    condition {
+      test     = "ArnEquals"
+      variable = "aws:SourceArn"
+      values = [
+        aws_cloudwatch_metric_alarm.dns_errors.arn,
+        aws_cloudwatch_metric_alarm.certificate_errors.arn,
+      ]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
+    }
+  }
+}
+
+resource "aws_sns_topic_policy" "count_alarms" {
+  arn    = aws_sns_topic.count_alarms.arn
+  policy = data.aws_iam_policy_document.count_alarm_topic.json
+}
+
+variable "alarm_notification_email" {
+  description = "Email address to receive Count alarm notifications."
+  type        = string
+  sensitive   = true
+}
+
+resource "aws_sns_topic_subscription" "count_alarm_email" {
+  topic_arn = aws_sns_topic.count_alarms.arn
+  protocol  = "email"
+  endpoint  = var.alarm_notification_email
 }
