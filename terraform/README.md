@@ -4,7 +4,9 @@ Target: `https://count.trendpointlabs.com/count` -> Cloudflare A record -> one E
 
 ## Review gate
 
-The default `enable_https = false` preserves the existing port 3000 task access. Do not apply until the Terraform plan has been compared with the current state. Keep `terraform.tfstate`, plan files, token values, TLS bundles, and `terraform.tfvars` out of Git. This configuration currently uses local Terraform state; back it up securely before any apply. This configuration does not store secret *values* in Terraform state.
+The default `enable_https = false` preserves the existing port 3000 task access. Do not apply until the Terraform plan has been compared with the current state. Keep `terraform.tfstate`, plan files, token values, TLS bundles, and `terraform.tfvars` out of Git. This configuration uses the `TrendPointLLC/count-production` HCP Terraform workspace for state, with Local execution mode; back up state securely before any apply. Terraform plans and applies still run from this directory and require manual review. This configuration does not store secret *values* in Terraform state.
+
+For a fresh checkout, authenticate to HCP Terraform with `terraform login` or a short-lived `TF_TOKEN_app_terraform_io` environment variable, then run `terraform init` from this directory before planning. The original local state backups are retained outside Git for recovery; the HCP workspace is now authoritative. Do not migrate an old local snapshot into this populated workspace.
 
 The `https_allowed_cidrs` variable defaults to empty, so the current `allowed_cidr` remains the only allowed source when HTTPS is first enabled. Public access requires a separate decision:
 
